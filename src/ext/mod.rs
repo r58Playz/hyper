@@ -37,14 +37,11 @@
 
 #[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 use bytes::Bytes;
-#[cfg(any(
-    all(any(feature = "client", feature = "server"), feature = "http1"),
-    feature = "ffi"
-))]
+#[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 use http::header::HeaderName;
 #[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 use http::header::{HeaderMap, IntoHeaderName, ValueIter};
-#[cfg(feature = "ffi")]
+#[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 use std::collections::HashMap;
 #[cfg(feature = "http2")]
 use std::fmt;
@@ -158,14 +155,14 @@ impl fmt::Debug for Protocol {
 /// [`preserve_header_case`]: /client/struct.Client.html#method.preserve_header_case
 #[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 #[derive(Clone, Debug)]
-pub(crate) struct HeaderCaseMap(HeaderMap<Bytes>);
+pub struct HeaderCaseMap(HeaderMap<Bytes>);
 
 #[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 impl HeaderCaseMap {
     /// Returns a view of all spellings associated with that header name,
     /// in the order they were found.
     #[cfg(feature = "client")]
-    pub(crate) fn get_all<'a>(
+    pub fn get_all<'a>(
         &'a self,
         name: &HeaderName,
     ) -> impl Iterator<Item = impl AsRef<[u8]> + 'a> + 'a {
@@ -175,22 +172,22 @@ impl HeaderCaseMap {
     /// Returns a view of all spellings associated with that header name,
     /// in the order they were found.
     #[cfg(any(feature = "client", feature = "server"))]
-    pub(crate) fn get_all_internal(&self, name: &HeaderName) -> ValueIter<'_, Bytes> {
+    pub fn get_all_internal(&self, name: &HeaderName) -> ValueIter<'_, Bytes> {
         self.0.get_all(name).into_iter()
     }
 
     #[cfg(any(feature = "client", feature = "server"))]
-    pub(crate) fn default() -> Self {
+    pub fn default() -> Self {
         Self(Default::default())
     }
 
     #[cfg(any(test, feature = "ffi"))]
-    pub(crate) fn insert(&mut self, name: HeaderName, orig: Bytes) {
+    pub fn insert(&mut self, name: HeaderName, orig: Bytes) {
         self.0.insert(name, orig);
     }
 
     #[cfg(any(feature = "client", feature = "server"))]
-    pub(crate) fn append<N>(&mut self, name: N, orig: Bytes)
+    pub fn append<N>(&mut self, name: N, orig: Bytes)
     where
         N: IntoHeaderName,
     {
@@ -198,10 +195,10 @@ impl HeaderCaseMap {
     }
 }
 
-#[cfg(feature = "ffi")]
+#[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 #[derive(Clone, Debug)]
 /// Hashmap<Headername, numheaders with that name>
-pub(crate) struct OriginalHeaderOrder {
+pub struct OriginalHeaderOrder {
     /// Stores how many entries a Headername maps to. This is used
     /// for accounting.
     num_entries: HashMap<HeaderName, usize>,
@@ -213,16 +210,16 @@ pub(crate) struct OriginalHeaderOrder {
     entry_order: Vec<(HeaderName, usize)>,
 }
 
-#[cfg(all(feature = "http1", feature = "ffi"))]
+#[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
 impl OriginalHeaderOrder {
-    pub(crate) fn default() -> Self {
+    pub fn default() -> Self {
         OriginalHeaderOrder {
             num_entries: HashMap::new(),
             entry_order: Vec::new(),
         }
     }
 
-    pub(crate) fn insert(&mut self, name: HeaderName) {
+    pub fn insert(&mut self, name: HeaderName) {
         if !self.num_entries.contains_key(&name) {
             let idx = 0;
             self.num_entries.insert(name.clone(), 1);
@@ -233,7 +230,7 @@ impl OriginalHeaderOrder {
         // header name encountered
     }
 
-    pub(crate) fn append<N>(&mut self, name: N)
+    pub fn append<N>(&mut self, name: N)
     where
         N: IntoHeaderName + Into<HeaderName> + Clone,
     {
@@ -289,7 +286,7 @@ impl OriginalHeaderOrder {
     /// let (name, idx) = iter.next();
     /// assert_eq!(b"c=d", h_map.get_all(name).nth(idx).unwrap());
     /// ```
-    pub(crate) fn get_in_order(&self) -> impl Iterator<Item = &(HeaderName, usize)> {
+    pub fn get_in_order(&self) -> impl Iterator<Item = &(HeaderName, usize)> {
         self.entry_order.iter()
     }
 }
